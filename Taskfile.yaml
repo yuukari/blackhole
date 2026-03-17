@@ -1,0 +1,78 @@
+version: 3
+
+vars:
+  APP_NAME: 'blackhole'
+  APP_IMAGE: 'iamyuukari/{{ .APP_NAME }}'
+  APP_UID:
+    sh: id -u
+
+  TOOLS_YANDEX_MUSIC_DOWNLOADER_REPO: 'git+https://github.com/llistochek/yandex-music-downloader'
+
+dotenv:
+  - .env
+
+tasks:
+  # Init tasks
+
+  init:
+    desc: Install required tools and dependencies for development
+    cmds:
+      - task: init:tools
+      - task: init:dependencies
+      - cp -n .env.example .env || true
+
+  init:tools:
+    desc: Install required tools for development
+    cmds:
+      - 'uv tool install {{.TOOLS_YANDEX_MUSIC_DOWNLOADER_REPO}}'
+
+  init:dependencies:
+    desc: Install required dependencies for development
+    cmds:
+      - npm i
+
+  # Docker tasks
+
+  docker:build:
+    desc: Build images
+    cmds:
+      - docker build -f ./.docker/Dockerfile . -t {{.APP_IMAGE}}
+
+  docker:start:
+    desc: Run containers
+    env:
+      APP_IMAGE: '{{.APP_IMAGE}}'
+      APP_UID: '{{.APP_UID}}'
+    cmds:
+     - docker compose up
+
+  docker:build-start:
+    desc: Build images and run containers
+    cmds:
+      - task: docker:build
+      - task: docker:start
+
+  # Local tasks
+
+  local:dev:
+    desc: Run locally for development
+    cmds:
+      - npm run dev
+
+  local:build:
+    desc: Build locally with TSC
+    cmds:
+      - rm -rf ./build
+      - npm run build
+
+  local:run:
+    desc: Build locally with TSC and run compiled source
+    cmds:
+      - task: local:build
+      - npm run start
+
+  local:run-once:
+    desc: Build locally with TSC and run compiled source for one time sync
+    cmds:
+      - task: local:build
+      - npm run start-once

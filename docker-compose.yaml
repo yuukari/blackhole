@@ -1,0 +1,10 @@
+services:
+  blackhole:
+    container_name: blackhole
+    image: ${APP_IMAGE:-iamyuukari/blackhole}
+    user: ${APP_UID:-1000}
+    env_file:
+      - .env
+    volumes:
+      - ./storage:/opt/blackhole
+    restart: unless-stopped

@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "outDir": "./build",
+    "sourceRoot": "./src",
+    "module": "nodenext",
+    "target": "esnext",
+    "types": [],
+    "sourceMap": true,
+    "declaration": false,
+    "declarationMap": false,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+  }
+}

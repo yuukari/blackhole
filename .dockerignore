@@ -1,0 +1,11 @@
+.github/
+.idea/
+.vscode/
+build/
+node_modules/
+storage/
+.env
+.env.example
+docker-compose.yaml
+.gitignore
+Taskfile.yaml
