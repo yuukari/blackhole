@@ -1,11 +1,12 @@
 # Builder
-FROM node:22.22-alpine3.23 AS builder
+FROM node:22.22-bookworm-slim AS builder
 
-RUN apk update --no-cache && \
-    apk add --no-cache \
-        tzdata \
-        python3 \
-        py3-pip
+RUN apt-get update && apt-get install -y \
+    tzdata \
+    python3 \
+    python3-venv \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m venv /venv
 ENV PATH="/venv/bin:$PATH"
@@ -22,12 +23,13 @@ COPY . .
 RUN npm run build
 
 # App
-FROM node:22.22-alpine3.23
+FROM node:22.22-bookworm-slim
 
-RUN apk update --no-cache && \
-    apk add --no-cache \
-        tzdata  \
-        python3
+RUN apt-get update && apt-get install -y \
+    tzdata \
+    python3 \
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /venv /venv
 ENV PATH="/venv/bin:$PATH"
