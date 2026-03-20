@@ -1,7 +1,7 @@
 {
   "name": "blackhole",
   "version": "0.1.0",
-  "description": "blackhole is a small util that syncing and sucking (downloading) your music from streaming services to local storage. It is intended to use on a NAS or homelab server.",
+  "description": "Small util that syncing and sucking (downloading) your music from streaming services to local storage. Intended to use on a NAS or homelab server",
   "author": "Yuukari",
   "type": "module",
   "main": "build/index.js",

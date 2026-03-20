@@ -19,7 +19,6 @@ tasks:
     cmds:
       - task: init:tools
       - task: init:dependencies
-      - cp -n .env.example .env || true
 
   init:tools:
     desc: Install required tools for development
@@ -34,23 +33,28 @@ tasks:
   # Docker tasks
 
   docker:build:
-    desc: Build images
+    desc: Build image locally with 'dev' tag
+    vars:
+      APP_IMAGE: '{{.APP_IMAGE}}:dev'
     cmds:
       - docker build -f ./.docker/Dockerfile . -t {{.APP_IMAGE}}
 
-  docker:start:
-    desc: Run containers
+  docker:build-start:
+    desc: Build image locally with 'dev' tag and run container
+    env:
+      APP_IMAGE: '{{.APP_IMAGE}}:dev'
+      APP_UID: '{{.APP_UID}}'
+    cmds:
+      - task: docker:build
+      - docker compose up
+
+  docker:run:
+    desc: Pull image from Docker Hub and run container
     env:
       APP_IMAGE: '{{.APP_IMAGE}}'
       APP_UID: '{{.APP_UID}}'
     cmds:
-     - docker compose up
-
-  docker:build-start:
-    desc: Build images and run containers
-    cmds:
-      - task: docker:build
-      - task: docker:start
+      - docker compose up
 
   # Local tasks
 
