@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { scheduleJob, gracefulShutdown } from 'node-schedule'
+import { gracefulShutdown, scheduleJob } from 'node-schedule'
 import type { Logger } from 'pino'
 
 import { loadConfig } from './config/index.js'
@@ -13,6 +13,7 @@ import { YandexMusicProvider } from './provider/index.js'
 import { DownloadAlbumsTask, DownloadTracksTask, type Task, UpdateAlbumsTask, UpdateTracksTask } from './tasks/index.js'
 
 let logger: Logger
+let isSyncRunning = false
 
 async function boot() {
     const config = loadConfig()
@@ -64,8 +65,13 @@ async function boot() {
 }
 
 async function runTasks(tasks: Task[]) {
+    if (isSyncRunning) {
+        logger.info('Skipping scheduled tasks run: previous tasks not completed yet')
+        return
+    }
     logger.info('Running sync tasks')
 
+    isSyncRunning = true
     const syncStartAt = new Date()
     for (const task of tasks) {
         try {
@@ -74,6 +80,7 @@ async function runTasks(tasks: Task[]) {
             logger.error(e, 'Sync task failed')
         }
     }
+    isSyncRunning = false
     const syncEndAt = new Date()
 
     logger.info(`Sync done in ${getDuration(syncStartAt, syncEndAt)}`)
