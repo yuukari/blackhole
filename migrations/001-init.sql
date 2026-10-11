@@ -9,7 +9,7 @@ CREATE TABLE blackhole_tracks
     title    TEXT NOT NULL,
     artists  TEXT NOT NULL,
     status   TEXT NOT NULL DEFAULT 'pending',
-    added_at INTEGER       DEFAULT (strftime('%s', 'now')),
+    added_at INTEGER       DEFAULT (STRFTIME('%s', 'now')),
 
     PRIMARY KEY (id, provider)
 );
@@ -21,7 +21,7 @@ CREATE TABLE blackhole_albums
     title    TEXT NOT NULL,
     artists  TEXT NOT NULL,
     status   TEXT NOT NULL DEFAULT 'pending',
-    added_at INTEGER       DEFAULT (strftime('%s', 'now')),
+    added_at INTEGER       DEFAULT (STRFTIME('%s', 'now')),
 
     PRIMARY KEY (id, provider)
 );

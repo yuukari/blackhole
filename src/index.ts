@@ -6,19 +6,21 @@ import { loadConfig } from './config/index.js'
 import { createLogger } from './logger/index.js'
 
 import { Migrator } from './database/index.js'
-import { AlbumsRepository, TracksRepository } from './database/repository/index.js'
+import { AlbumsRepository, TelegramBotQueueRepository, TracksRepository } from './database/repository/index.js'
 
-import type { Provider } from './provider/index.js'
+import { type Provider, TelegramBotProvider } from './provider/index.js'
 import { YandexMusicProvider } from './provider/index.js'
 import { DownloadAlbumsTask, DownloadTracksTask, type Task, UpdateAlbumsTask, UpdateTracksTask } from './tasks/index.js'
+import { TelegramBot } from './bot/index.js'
 
 let logger: Logger
 let isSyncRunning = false
+let isExiting = false
 
 async function boot() {
     const config = loadConfig()
     logger = createLogger(config.debugMode)
-    logger.info('Starting blackhole v0.1.0')
+    logger.info('Starting blackhole v0.2.0')
 
     const db = new Database(config.databasePath)
     const migrator = new Migrator(db)
@@ -26,10 +28,21 @@ async function boot() {
 
     const tracksRepository = new TracksRepository(db)
     const albumsRepository = new AlbumsRepository(db)
+    const telegramBotQueueRepository = new TelegramBotQueueRepository(db)
+
+    const bot = new TelegramBot(config.telegramBot, telegramBotQueueRepository, logger)
+    const botInstance = await bot.start()
 
     const providers: Provider[] = [
-        new YandexMusicProvider(config.yandexMusic, config.mediaPath, logger),
+        // new YandexMusicProvider(config.yandexMusic, config.mediaPath, logger),
     ]
+    if (config.telegramBot.enabled) {
+        providers.push(new TelegramBotProvider(
+            config.telegramBot, config.mediaPath,
+            botInstance!, telegramBotQueueRepository,
+            logger,
+        ))
+    }
     for (const provider of providers) {
         await provider.init()
     }
@@ -40,7 +53,6 @@ async function boot() {
         new DownloadTracksTask(providers, tracksRepository, logger, config.syncRules, config.processChunkSize),
         new DownloadAlbumsTask(providers, albumsRepository, logger, config.syncRules, config.processChunkSize),
     ]
-    logger.info('blackhole ready')
 
     if (process.argv.length > 1 && process.argv[2] == '--once') {
         logger.info('Running one time sync')
@@ -49,15 +61,32 @@ async function boot() {
         return
     }
 
+    logger.info('blackhole ready')
+
     const syncJob = scheduleJob(config.syncSchedule, async () => runTasks(tasks))
     logger.info(`Sync schedule set to: ${config.syncSchedule}`)
 
-    process.on('SIGINT', async function () {
-        logger.info('Received interrupt signal, blackhole exiting')
-        await gracefulShutdown()
-        db.close()
-        process.exit(0)
-    })
+    async function shutdown(signal: 'SIGINT' | 'SIGTERM') {
+        if (isExiting) {
+            return
+        }
+        isExiting = true
+
+        logger.info(`Received ${signal} signal, blackhole exiting`)
+        try {
+            await bot.stop()
+            await gracefulShutdown()
+            db.close()
+            process.exit(0)
+        } catch (e) {
+            logger.error(e, 'Failed to make graceful shutdown. blackhole will be stopped anyway')
+            db.close()
+            process.exit(1)
+        }
+    }
+
+    process.on('SIGINT', async () => shutdown('SIGINT'))
+    process.on('SIGTERM', async () => shutdown('SIGTERM'))
 
     if (config.syncOnStart) {
         syncJob.invoke()

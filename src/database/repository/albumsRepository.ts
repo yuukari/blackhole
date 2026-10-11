@@ -16,7 +16,7 @@ export class AlbumsRepository {
                 blackhole_albums
                 (id, provider, title, artists, status, added_at)
             VALUES
-                (@id, @provider, @title, @artists, @status, @addedAt)
+                (@id, @provider, @title, @artists, @status, @added_at)
         `)
 
         const tx = this.db.transaction((albums: ProviderAlbum[]) => {
@@ -27,7 +27,7 @@ export class AlbumsRepository {
                     title: album.title,
                     artists: album.artists.join('; '),
                     status: 'pending',
-                    addedAt: Date.now()
+                    added_at: Date.now()
                 })
             }
         })

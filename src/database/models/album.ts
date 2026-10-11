@@ -4,5 +4,5 @@ export type AlbumModel = {
     title: string
     artists: string
     status: 'pending' | 'processing' | 'downloaded' | 'error'
-    addedAt: number
+    added_at: number
 }

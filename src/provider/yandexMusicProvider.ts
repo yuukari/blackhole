@@ -1,4 +1,5 @@
 import * as path from 'node:path'
+import { mkdir } from 'node:fs/promises'
 import { setTimeout } from 'timers/promises'
 
 import type { Logger } from 'pino'
@@ -36,6 +37,10 @@ export class YandexMusicProvider implements Provider {
     }
 
     public async init() {
+        await mkdir(path.join(this.mediaPath, this.config.directoryName), {
+            recursive: true
+        })
+
         this.logger.debug(`Initiating client with API base url ${this.config.apiBaseUrl}`)
 
         const {uid} = await this.client.getAccountSettings()

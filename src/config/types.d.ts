@@ -7,7 +7,16 @@ export type Config = {
     syncOnStart: boolean
 
     syncRules: Record<string, SyncRules>
+
     yandexMusic: YandexMusicConfig
+    telegramBot: TelegramBotConfig
+}
+export type SyncRules = {
+    syncTracks: boolean | undefined
+    syncAlbums: boolean | undefined
+    excludeTracks: string[] | undefined
+    excludeAlbums: string[] | undefined
+    excludeArtists: string[] | undefined
 }
 
 export type YandexMusicConfig = {
@@ -20,10 +29,11 @@ export type YandexMusicConfig = {
     maxActiveDownloads: number
 }
 
-export type SyncRules = {
-    syncTracks: boolean | undefined
-    syncAlbums: boolean | undefined
-    excludeTracks: string[] | undefined
-    excludeAlbums: string[] | undefined
-    excludeArtists: string[] | undefined
+export type TelegramBotConfig = {
+    enabled: boolean,
+    token: string,
+    allowedUsers: string[]
+    directoryName: string
+    syncFromDate: Date | undefined
+    maxActiveDownloads: number
 }
