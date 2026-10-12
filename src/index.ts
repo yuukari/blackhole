@@ -8,9 +8,10 @@ import { createLogger } from './logger/index.js'
 import { Migrator } from './database/index.js'
 import { AlbumsRepository, TelegramBotQueueRepository, TracksRepository } from './database/repository/index.js'
 
-import { type Provider, TelegramBotProvider } from './provider/index.js'
-import { YandexMusicProvider } from './provider/index.js'
+import { type Provider, YandexMusicProvider, TelegramBotProvider } from './provider/index.js'
+
 import { DownloadAlbumsTask, DownloadTracksTask, type Task, UpdateAlbumsTask, UpdateTracksTask } from './tasks/index.js'
+
 import { TelegramBot } from './bot/index.js'
 
 let logger: Logger
@@ -34,7 +35,7 @@ async function boot() {
     const botInstance = await bot.start()
 
     const providers: Provider[] = [
-        // new YandexMusicProvider(config.yandexMusic, config.mediaPath, logger),
+        new YandexMusicProvider(config.yandexMusic, config.mediaPath, logger),
     ]
     if (config.telegramBot.enabled) {
         providers.push(new TelegramBotProvider(

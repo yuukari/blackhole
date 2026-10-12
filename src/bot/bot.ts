@@ -1,28 +1,22 @@
-import { Bot } from 'grammy'
+import { Bot, type Context } from 'grammy'
+import type { LanguageCode } from 'grammy/types'
+import type { I18nFlavor } from '@grammyjs/i18n'
 import type { Logger } from 'pino'
 
 import type { TelegramBotConfig } from '../config/types.js'
 
 import { AllowListMiddleware } from './middleware/index.js'
+import { DEFAULT_LOCALE, i18n } from './i18n.js'
 import { AddToQueueHandler, FallbackHandler, StartHandler, QueueHandler } from './handler/index.js'
 
 import { TelegramBotQueueRepository } from '../database/repository/index.js'
 
-export class TelegramBot {
-    private readonly commands = [
-        {
-            command: 'queue',
-            description: 'Показать очередь загрузок',
-        },
-        {
-            command: 'help',
-            description: 'Список доступных команд и возможностей',
-        },
-    ]
+export type TelegramBotContext = Context & I18nFlavor
 
+export class TelegramBot {
     private readonly config: TelegramBotConfig
     private readonly logger: Logger
-    private readonly bot: Bot | undefined
+    private readonly bot: Bot<TelegramBotContext> | undefined
 
     public constructor(
         config: TelegramBotConfig,
@@ -42,7 +36,8 @@ export class TelegramBot {
                 },
             }
             : {}
-        this.bot = new Bot(this.config.token, botOptions)
+
+        this.bot = new Bot<TelegramBotContext>(this.config.token, botOptions)
         this.bot.catch(async e => {
             this.logger.error(e.error, 'Error while handling telegram bot update')
             if (!e.ctx.chatId) {
@@ -51,13 +46,12 @@ export class TelegramBot {
 
             await this.bot!.api.sendMessage(
                 e.ctx.chatId,
-                `<b>⚠️ Произошла ошибка при обработке.</b>\n\nПодробная информация:\n<pre>${e.error}</pre>`,
-                {
-                    parse_mode: 'HTML',
-                },
+                e.ctx.t('error', {error: String(e.error)}),
+                {parse_mode: 'HTML'},
             )
         })
 
+        this.bot.use(i18n)
         this.bot.use(new AllowListMiddleware(this.config.allowedUsers).do)
 
         new StartHandler().register(this.bot)
@@ -66,7 +60,7 @@ export class TelegramBot {
         new FallbackHandler().register(this.bot)
     }
 
-    public async start(): Promise<Bot | undefined> {
+    public async start(): Promise<Bot<TelegramBotContext> | undefined> {
         if (this.bot === undefined) {
             return
         }
@@ -75,7 +69,11 @@ export class TelegramBot {
         if (this.config.alternateApi) {
             this.logger.debug(`Using alternative Telegram bot API server (API URL: ${this.config.alternateApiUrl}; storage URL: ${this.config.alternateStorageUrl})`)
         }
-        await this.bot.api.setMyCommands(this.commands)
+
+        for (const locale of i18n.locales as LanguageCode[]) {
+            await this.bot.api.setMyCommands(this.buildCommands(locale), { language_code: locale })
+        }
+        await this.bot.api.setMyCommands(this.buildCommands(DEFAULT_LOCALE))
 
         this.bot.start().catch(e => this.logger.error(e, 'Critical error, telegram bot stopped'))
         return this.bot
@@ -86,5 +84,12 @@ export class TelegramBot {
             return
         }
         await this.bot.stop()
+    }
+
+    private buildCommands(locale: string): { command: string, description: string }[] {
+        return [
+            { command: 'queue', description: i18n.t(locale, 'cmd-queue') },
+            { command: 'help', description: i18n.t(locale, 'cmd-help') },
+        ]
     }
 }

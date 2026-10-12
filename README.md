@@ -22,7 +22,7 @@ Intended to use on a NAS or homelab server.
 - [X] [Telegram bot](#telegram-bot-configuration) (not streaming service, but allows you to download music from
   Telegram)
 
-> Currently, only Yandex Music is supported. Other services will be added some time later
+> ℹ️ Other services will be added some time later, stay tuned!
 
 ## ⚡ Quick start
 

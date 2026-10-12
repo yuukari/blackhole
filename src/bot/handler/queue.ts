@@ -1,4 +1,6 @@
-import { type Bot, type Context, InlineKeyboard } from 'grammy'
+import { type Bot, InlineKeyboard } from 'grammy'
+
+import type { TelegramBotContext } from '../index.js'
 
 import { TelegramBotQueueRepository } from '../../database/repository/index.js'
 
@@ -14,13 +16,13 @@ export default class QueueHandler {
         private readonly telegramBotQueueRepository: TelegramBotQueueRepository,
     ) {}
 
-    public register(bot: Bot): void {
+    public register(bot: Bot<TelegramBotContext>): void {
         bot.command('queue', this.handle)
         bot.callbackQuery(/^queue:page:\d+$/, this.handleCallback)
     }
 
-    private handle = async (ctx: Context): Promise<void> => {
-        const {text, keyboard} = this.render(1)
+    private handle = async (ctx: TelegramBotContext): Promise<void> => {
+        const {text, keyboard} = this.render(ctx, 1)
         await ctx.reply(
             text,
             {
@@ -30,7 +32,7 @@ export default class QueueHandler {
         )
     }
 
-    private handleCallback = async (ctx: Context): Promise<void> => {
+    private handleCallback = async (ctx: TelegramBotContext): Promise<void> => {
         const callbackData = ctx.callbackQuery?.data ?? ''
         const match = /^queue:page:(\d+)$/.exec(callbackData)
         if (match === null) {
@@ -39,7 +41,7 @@ export default class QueueHandler {
         }
 
         const page = Number(match[1] ?? 1)
-        const {text, keyboard} = this.render(page)
+        const {text, keyboard} = this.render(ctx, page)
         try {
             await ctx.editMessageText(
                 text,
@@ -53,11 +55,11 @@ export default class QueueHandler {
         }
     }
 
-    private render(page: number): QueuePage {
+    private render(ctx: TelegramBotContext, page: number): QueuePage {
         const queueCount = this.telegramBotQueueRepository.getPendingTracksCount()
         if (queueCount === 0) {
             return {
-                text: `⬇️ Очередь загрузок <b>пуста</b>.`,
+                text: ctx.t('queue-empty'),
                 keyboard: new InlineKeyboard(),
             }
         }
@@ -81,10 +83,9 @@ export default class QueueHandler {
         if (page < totalPages) {
             keyboard.text('➡️', `queue:page:${page + 1}`)
         }
-        keyboard.row().text('🔄 Синхронизировать', 'queue:forceSync')
 
         return {
-            text: `<b>⬇️ Очередь загрузок</b>\n\n<blockquote>${queue.join('\n')}</blockquote>\n\nСтраница: <b>${page} из ${totalPages}</b>`,
+            text: ctx.t('queue-list', { items: queue.join('\n'), page, totalPages }),
             keyboard: keyboard,
         }
     }

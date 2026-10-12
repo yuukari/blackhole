@@ -1,14 +1,13 @@
-import type { Bot, Context } from 'grammy'
+import type { Bot } from 'grammy'
+
+import type { TelegramBotContext } from '../index.js'
 
 export default class FallbackHandler {
-    public register(bot: Bot): void {
+    public register(bot: Bot<TelegramBotContext>): void {
         bot.on('message', this.handle)
     }
 
-    private handle = async (ctx: Context): Promise<void> => {
-        await ctx.reply(
-            '<b>🤔 Не понимаю вас.</b>\n\nДля просмотра списка доступных команд и возможностей используйте /help',
-            {parse_mode: 'HTML'},
-        )
+    private handle = async (ctx: TelegramBotContext): Promise<void> => {
+        await ctx.reply(ctx.t('fallback'), { parse_mode: 'HTML' })
     }
 }

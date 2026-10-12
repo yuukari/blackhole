@@ -1,5 +1,6 @@
-import { TelegramBot } from './bot.js'
+import { TelegramBot, type TelegramBotContext } from './bot.js'
 
 export {
-    TelegramBot
+    TelegramBot,
+    type TelegramBotContext
 }

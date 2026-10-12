@@ -1,16 +1,16 @@
 import * as path from 'node:path'
 import { existsSync } from 'node:fs'
-import { mkdir, writeFile, rename, unlink } from 'node:fs/promises'
+import { mkdir, writeFile, rename, rm } from 'node:fs/promises'
 
 import type { Bot } from 'grammy'
 import type { File } from 'grammy/types'
 import { applyTagsToFile, readTags, clearTags, applyPictures, type TagInput } from 'taglib-wasm/simple'
 import type { Logger } from 'pino'
 
-import type { TelegramBotConfig } from '../config/types.js'
-
 import type { Provider, ProviderAlbum, ProviderTrack } from './types.js'
 
+import type { TelegramBotConfig } from '../config/types.js'
+import type { TelegramBotContext } from '../bot/index.js'
 import { TelegramBotQueueRepository } from '../database/repository/index.js'
 import type { TelegramBotQueueModel } from '../database/models/index.js'
 
@@ -21,14 +21,14 @@ export class TelegramBotProvider implements Provider {
     private readonly config: TelegramBotConfig
     private readonly mediaPath: string
 
-    private readonly bot: Bot
+    private readonly bot: Bot<TelegramBotContext>
     private readonly telegramBotQueueRepository: TelegramBotQueueRepository
 
     private readonly logger: Logger
 
     public constructor(
         config: TelegramBotConfig, mediaPath: string,
-        bot: Bot, telegramBotQueueRepository: TelegramBotQueueRepository,
+        bot: Bot<TelegramBotContext>, telegramBotQueueRepository: TelegramBotQueueRepository,
         logger: Logger,
     ) {
         this.config = config
@@ -141,27 +141,25 @@ export class TelegramBotProvider implements Provider {
         }
 
         // Prepare paths for temporary file
-
-        const tempFilename = path.join(this.mediaPath, this.config.directoryName, '.temp', id)
-        if (existsSync(tempFilename)) {
-            await unlink(tempFilename)
-        }
+        const tempFilename = path.join(this.mediaPath, '.temp', id)
         await mkdir(path.dirname(tempFilename), {recursive: true})
 
-        // Download content to temporary file, and normalize tags
-
+        // Download content to temporary file and normalize tags
         await writeFile(tempFilename, Buffer.from(await response.arrayBuffer()))
-        await this.normalizeTags(track, tempFilename)
+        try {
+            await this.normalizeTags(track, tempFilename)
+            const filename = await this.buildFilename(track, tempFilename)
+            if (existsSync(filename)) {
+                this.logger.debug(`Track with id '${id}' already downloaded, file '${filename}' exists`)
+                return id
+            }
 
-        // Move temporary file to actual media library
-
-        const filename = await this.buildFilename(track, tempFilename)
-        if (existsSync(filename)) {
-            this.logger.debug(`Track with id '${id}' already downloaded, file '${filename}' exists`)
-            return id
+            // Move file to actual media library
+            await mkdir(path.dirname(filename), {recursive: true})
+            await rename(tempFilename, filename)
+        } finally {
+            await rm(tempFilename, { force: true })
         }
-        await mkdir(path.dirname(filename), {recursive: true})
-        await rename(tempFilename, filename)
 
         this.logger.debug(`Completed downloading track with id: ${id}`)
         return id

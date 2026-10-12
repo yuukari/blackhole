@@ -39,5 +39,6 @@ COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /blackhole/build ./build
 COPY --from=builder /blackhole/migrations ./migrations
+COPY --from=builder /blackhole/locales ./locales
 
 CMD ["node", "build/index.js"]

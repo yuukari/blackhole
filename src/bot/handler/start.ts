@@ -1,14 +1,15 @@
-import type { Bot, Context } from 'grammy'
-import type { Logger } from 'pino'
+import type { Bot } from 'grammy'
+
+import type { TelegramBotContext } from '../index.js'
 
 export default class StartHandler {
-    public register(bot: Bot): void {
+    public register(bot: Bot<TelegramBotContext>): void {
         bot.command('start', this.handle)
     }
 
-    private handle = async (ctx: Context): Promise<void> => {
+    private handle = async (ctx: TelegramBotContext): Promise<void> => {
         await ctx.reply(
-            `<b>👋 Привет, @${ctx.from!.username}!</b>\n\n🎵 Для добавления музыки в библиотеку пришлите мне любое сообщение с вложениями в виде аудио или документов.\n\nДля просмотра списка доступных команд и возможностей используйте /help`,
+            ctx.t('start', { username: ctx.from!.username! }),
             {parse_mode: 'HTML'},
         )
     }
