@@ -35,9 +35,14 @@ export class TelegramBot {
             return
         }
 
-        const allowList = new AllowListMiddleware(this.config.allowedUsers)
-
-        this.bot = new Bot(this.config.token)
+        const botOptions = this.config.alternateApi
+            ? {
+                client: {
+                    apiRoot: this.config.alternateApiUrl!,
+                },
+            }
+            : {}
+        this.bot = new Bot(this.config.token, botOptions)
         this.bot.catch(async e => {
             this.logger.error(e.error, 'Error while handling telegram bot update')
             if (!e.ctx.chatId) {
@@ -53,10 +58,10 @@ export class TelegramBot {
             )
         })
 
-        this.bot.use(allowList.do)
+        this.bot.use(new AllowListMiddleware(this.config.allowedUsers).do)
 
         new StartHandler().register(this.bot)
-        new AddToQueueHandler(telegramBotQueueRepository, this.logger).register(this.bot)
+        new AddToQueueHandler(this.config.alternateApi, telegramBotQueueRepository, this.logger).register(this.bot)
         new QueueHandler(telegramBotQueueRepository).register(this.bot)
         new FallbackHandler().register(this.bot)
     }
@@ -67,6 +72,9 @@ export class TelegramBot {
         }
 
         this.logger.debug(`Starting telegram bot, allowed users ids: ${this.config.allowedUsers.join(', ')}`)
+        if (this.config.alternateApi) {
+            this.logger.debug(`Using alternative Telegram bot API server (API URL: ${this.config.alternateApiUrl}; storage URL: ${this.config.alternateStorageUrl})`)
+        }
         await this.bot.api.setMyCommands(this.commands)
 
         this.bot.start().catch(e => this.logger.error(e, 'Critical error, telegram bot stopped'))

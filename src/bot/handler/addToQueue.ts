@@ -7,6 +7,7 @@ export default class AddToQueueHandler {
     private readonly maxCloudFileSize = 20 * 1024 * 1024
 
     public constructor(
+        private readonly useAlternateApi: boolean,
         private readonly telegramBotQueueRepository: TelegramBotQueueRepository,
         private readonly logger: Logger,
     ) {}
@@ -22,9 +23,9 @@ export default class AddToQueueHandler {
             throw new Error('No audio attachment in this message')
         }
 
-        if (audio.file_size !== undefined && audio.file_size > this.maxCloudFileSize) {
+        if (!this.useAlternateApi && audio.file_size !== undefined && audio.file_size > this.maxCloudFileSize) {
             await ctx.reply(
-                `⚠️ Файл <b>${audio.file_name}</b> слишком большой для загрузки.\n\nВ режиме работы без локального Telegram API поддерживаются файлы размером до 20 мегабайт.`,
+                `⚠️ Файл <b>${audio.file_name}</b> слишком большой для загрузки.\n\nВ режиме работы без альтернативного Telegram API поддерживаются файлы размером до 20 мегабайт.`,
                 {parse_mode: 'HTML'},
             )
             return

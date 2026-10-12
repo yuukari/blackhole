@@ -12,7 +12,7 @@ RUN python3 -m venv /venv
 ENV PATH="/venv/bin:$PATH"
 
 RUN pip install --no-cache-dir \
-    https://github.com/llistochek/yandex-music-downloader/archive/refs/tags/v3.5.4.zip
+    https://github.com/llistochek/yandex-music-downloader/archive/refs/tags/v3.5.5.zip
 
 WORKDIR /blackhole
 

@@ -60,6 +60,13 @@ export function loadConfig(): Config {
             allowedUsers: process.env.BLACKHOLE_TELEGRAM_BOT_ALLOWED_USERS
                 ? process.env.BLACKHOLE_TELEGRAM_BOT_ALLOWED_USERS.split(',')
                 : [],
+
+            alternateApi: process.env.BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API
+                ? process.env.BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API.toLowerCase() === 'true'
+                : false,
+            alternateApiUrl: process.env.BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API_URL,
+            alternateStorageUrl: process.env.BLACKHOLE_TELEGRAM_BOT_ALTERNATE_STORAGE_URL,
+
             directoryName: process.env.BLACKHOLE_TELEGRAM_BOT_DIRECTORY_NAME ?? 'telegram-bot',
             syncFromDate: process.env.BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATE
                 ? new Date(process.env.BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATE)
@@ -88,6 +95,9 @@ function validateConfig() {
         BLACKHOLE_TELEGRAM_BOT_ENABLED,
         BLACKHOLE_TELEGRAM_BOT_TOKEN,
         BLACKHOLE_TELEGRAM_BOT_ALLOWED_USERS,
+        BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API,
+        BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API_URL,
+        BLACKHOLE_TELEGRAM_BOT_ALTERNATE_STORAGE_URL,
         BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATETIME,
         BLACKHOLE_TELEGRAM_BOT_MAX_ACTIVE_DOWNLOADS,
     } = process.env
@@ -106,7 +116,6 @@ function validateConfig() {
 
     if (BLACKHOLE_YANDEX_MUSIC_TOKEN == undefined) {
         throw new Error('BLACKHOLE_YANDEX_MUSIC_TOKEN environment variable not set')
-
     }
     if (
         BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATETIME != undefined &&
@@ -131,10 +140,16 @@ function validateConfig() {
         BLACKHOLE_TELEGRAM_BOT_ALLOWED_USERS.split(',').length > 0
 
     if (telegramBotEnabled && !hasTelegramBotToken) {
-        throw new Error('BLACKHOLE_TELEGRAM_BOT_TOKEN environment variable must be set to enable Telegram Bot support')
+        throw new Error('BLACKHOLE_TELEGRAM_BOT_TOKEN environment variable must be set to enable Telegram bot support')
     }
     if (telegramBotEnabled && !hasTelegramBotAllowedUsers) {
-        throw new Error('BLACKHOLE_TELEGRAM_BOT_ALLOWED_USERS environment variable must be set to enable Telegram Bot support')
+        throw new Error('BLACKHOLE_TELEGRAM_BOT_ALLOWED_USERS environment variable must be set to enable Telegram bot support')
+    }
+    if (
+        (BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API !== undefined && BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API.toLowerCase() === 'true') &&
+        (BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API_URL === undefined || BLACKHOLE_TELEGRAM_BOT_ALTERNATE_STORAGE_URL === undefined)
+    ) {
+        throw new Error('BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API_URL and BLACKHOLE_TELEGRAM_BOT_ALTERNATE_STORAGE_URL environment variables must be set to use alternative Telegram bot API server')
     }
     if (
         BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATETIME != undefined &&

@@ -19,6 +19,8 @@ Intended to use on a NAS or homelab server.
 - [ ] [SoundCloud](https://soundcloud.com)
 - [ ] [Spotify](https://spotify.com)
 - [ ] [Tidal](https://tidal.com/)
+- [X] [Telegram bot](#telegram-bot-configuration) (not streaming service, but allows you to download music from
+  Telegram)
 
 > Currently, only Yandex Music is supported. Other services will be added some time later
 
@@ -206,6 +208,24 @@ other variables are optional.
 | BLACKHOLE_YANDEX_MUSIC_DOWNLOADER_ARGS      | Arguments for [Yandex Music Downloader](https://github.com/llistochek/yandex-music-downloader) util, separated by comma. For reference see [this section](https://github.com/llistochek/yandex-music-downloader). Default set to download best quality and skip downloading for existing tracks. Also, blackhole always will be overwrite `--token`, `--track-id`/`--album-id` and `--dir` arguments | --quality,2,--skip-existing  |
 | BLACKHOLE_YANDEX_MUSIC_MAX_ACTIVE_DOWNLOADS | Max active concurrent downloads count (running processes of Yandex Music Downloader)                                                                                                                                                                                                                                                                                                                 | 2                            |
 
+### Telegram bot configuration
+
+> ℹ️ By using official, cloud-side Telegram API blackhole can download files up to 20 MB. If you want to download large
+> files (for example, .flac's or .wav's), you need to deploy local instance of Telegram API
+> server. [This process described in this section](./addons/local-telegram-bot-api/README.md).
+
+| Variable                                     | Description                                                                                                                                                                                                                                                                             | Default value |
+|----------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| BLACKHOLE_TELEGRAM_BOT_ENABLED               | Enables this provider and service for receiving updates from Telegram bot API                                                                                                                                                                                                           | false         |
+| BLACKHOLE_TELEGRAM_BOT_TOKEN                 | Token for your Telegram bot                                                                                                                                                                                                                                                             |               |
+| BLACKHOLE_TELEGRAM_BOT_ALLOWED_USERS         | List of Telegram users ids, separated by comma, who can use your Telegram bot                                                                                                                                                                                                           |               |
+| BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API         | Enables support for working with alternate instance of Telegram API server                                                                                                                                                                                                              | false         |
+| BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API_URL     | Base URL for alternate Telegram API server                                                                                                                                                                                                                                              | false         |
+| BLACKHOLE_TELEGRAM_BOT_ALTERNATE_STORAGE_URL | Base URL for alternate Telegram API file storage                                                                                                                                                                                                                                        | false         |
+| BLACKHOLE_TELEGRAM_BOT_DIRECTORY_NAME        | Name for subdirectory in media directory. If `BLACKHOLE_MEDIA_PATH` set as default value, full path to downloaded tracks will be: `/opt/blackhole/media/telegram-bot`                                                                                                                   | telegram-bot  |
+| BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATE        | Date (or datetime) from which synchronization and downloading of tracks begins. Relies on dates when you send messages with audio attachments to your Telegram bot. You can use any format that supported by JavaScript Date object, for example, `2025-06-20` or `2025-06-20T18:20:00` |               |
+| BLACKHOLE_TELEGRAM_BOT_MAX_ACTIVE_DOWNLOADS  | Max active concurrent downloads count                                                                                                                                                                                                                                                   | 2             |
+
 ### Sync rules
 
 Sync rules are various rules and filters for music providers. These rules are written as a JSON key-value object, where:
@@ -262,6 +282,7 @@ BLACKHOLE_SYNC_RULES='{"yandexMusic":{"syncAlbums":false,"excludeAlbums":["kAiCo
 Available music provider codes:
 
 - `yandexMusic` for Yandex Music
+- `telegramBot` for Telegram bot
 
 ## 👏 Gratitude
 

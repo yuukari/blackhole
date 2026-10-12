@@ -33,6 +33,11 @@ export type TelegramBotConfig = {
     enabled: boolean,
     token: string,
     allowedUsers: string[]
+
+    alternateApi: boolean
+    alternateApiUrl: string | undefined
+    alternateStorageUrl: string | undefined
+
     directoryName: string
     syncFromDate: Date | undefined
     maxActiveDownloads: number

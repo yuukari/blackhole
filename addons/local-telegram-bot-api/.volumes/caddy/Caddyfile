@@ -1,0 +1,13 @@
+{
+	admin off
+	auto_https off
+}
+
+:80 {
+	root * /srv
+	file_server
+
+	header {
+		Cache-Control "no-store"
+	}
+}
