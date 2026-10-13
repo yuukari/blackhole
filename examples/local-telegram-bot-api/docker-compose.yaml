@@ -1,0 +1,40 @@
+services:
+  blackhole_telegram-bot-api:
+    image: ghcr.io/gramiojs/telegram-bot-api:sha-adfd7f6a8e99
+    container_name: blackhole_telegram-bot-api
+    user: ${TELEGRAM_BOT_API_UID:-1000}
+    environment:
+      TELEGRAM_API_ID: ${TELEGRAM_BOT_API_ID}
+      TELEGRAM_API_HASH: ${TELEGRAM_BOT_API_HASH}
+      TELEGRAM_LOCAL: "1"
+      FILE_SERVER: "0"
+      TELEGRAM_TEMP_DIR: "/tmp"
+    expose:
+      - "8081"
+      - "8082"
+    ports:
+      - "127.0.0.1:38081:8081"
+    volumes:
+      - ./.volumes/telegram-bot-api:/var/lib/telegram-bot-api
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8082/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+
+  blackhole_telegram-bot-api_storage:
+    image: caddy:2.11.7-alpine
+    container_name: blackhole_telegram-bot-api_storage
+    ports:
+      - "127.0.0.1:38080:80"
+    volumes:
+      - ./.volumes/telegram-bot-api:/srv:ro
+      - ./.volumes/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./.volumes/caddy/data:/data
+      - ./.volumes/caddy/config:/config
+    depends_on:
+      blackhole_telegram-bot-api:
+        condition: service_healthy
+    restart: unless-stopped

@@ -2,10 +2,13 @@
 .idea/
 .vscode/
 build/
+examples/
 node_modules/
 storage/
 .env
 .env.example
 docker-compose.yaml
 .gitignore
+LICENSE
+README.md
 Taskfile.yaml

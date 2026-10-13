@@ -16,7 +16,7 @@ export class TracksRepository {
                 blackhole_tracks
                 (id, provider, title, artists, status, added_at)
             VALUES
-                (@id, @provider, @title, @artists, @status, @addedAt)
+                (@id, @provider, @title, @artists, @status, @added_at)
         `)
 
         const tx = this.db.transaction((tracks: ProviderTrack[]) => {
@@ -27,7 +27,7 @@ export class TracksRepository {
                     title: track.title,
                     artists: track.artists.join('; '),
                     status: 'pending',
-                    addedAt: Date.now()
+                    added_at: Date.now()
                 })
             }
         })
@@ -47,7 +47,7 @@ export class TracksRepository {
 
     public getIdsToDownload(provider: string, limit: number): string[] {
         const stmt = this.db.prepare<(string|number)[], TrackModel>(`
-            SELECT id FROM blackhole_tracks WHERE provider = ? AND NOT status = 'downloaded' ORDER BY added_at DESC LIMIT ?
+            SELECT id FROM blackhole_tracks WHERE provider = ? AND status = 'pending' ORDER BY added_at DESC LIMIT ?
         `)
         return stmt.all(provider, limit).map((row => row.id))
     }

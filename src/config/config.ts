@@ -28,6 +28,7 @@ export function loadConfig(): Config {
         syncRules: process.env.BLACKHOLE_SYNC_RULES
             ? JSON.parse(process.env.BLACKHOLE_SYNC_RULES) as Record<string, SyncRules>
             : {},
+
         yandexMusic: {
             apiBaseUrl: process.env.BLACKHOLE_YANDEX_MUSIC_API_BASE_URL ?? 'https://api.music.yandex.net',
             token: process.env.BLACKHOLE_YANDEX_MUSIC_TOKEN!,
@@ -48,6 +49,32 @@ export function loadConfig(): Config {
                 ? parseInt(process.env.BLACKHOLE_YANDEX_MUSIC_MAX_ACTIVE_DOWNLOADS)
                 : 2,
         },
+
+        telegramBot: {
+            enabled: process.env.BLACKHOLE_TELEGRAM_BOT_ENABLED
+                ? process.env.BLACKHOLE_TELEGRAM_BOT_ENABLED.toLowerCase() === 'true'
+                : false,
+            token: process.env.BLACKHOLE_TELEGRAM_BOT_TOKEN
+                ? process.env.BLACKHOLE_TELEGRAM_BOT_TOKEN
+                : '',
+            allowedUsers: process.env.BLACKHOLE_TELEGRAM_BOT_ALLOWED_USERS
+                ? process.env.BLACKHOLE_TELEGRAM_BOT_ALLOWED_USERS.split(',')
+                : [],
+
+            alternateApi: process.env.BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API
+                ? process.env.BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API.toLowerCase() === 'true'
+                : false,
+            alternateApiUrl: process.env.BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API_URL,
+            alternateStorageUrl: process.env.BLACKHOLE_TELEGRAM_BOT_ALTERNATE_STORAGE_URL,
+
+            directoryName: process.env.BLACKHOLE_TELEGRAM_BOT_DIRECTORY_NAME ?? 'telegram-bot',
+            syncFromDate: process.env.BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATE
+                ? new Date(process.env.BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATE)
+                : undefined,
+            maxActiveDownloads: process.env.BLACKHOLE_TELEGRAM_BOT_MAX_ACTIVE_DOWNLOADS
+                ? parseInt(process.env.BLACKHOLE_TELEGRAM_BOT_MAX_ACTIVE_DOWNLOADS)
+                : 2,
+        },
     }
 }
 
@@ -59,22 +86,21 @@ export function isDebugMode(): boolean {
 
 function validateConfig() {
     const {
-        BLACKHOLE_YANDEX_MUSIC_TOKEN,
-        BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATETIME,
         BLACKHOLE_SYNC_RULES,
+
+        BLACKHOLE_YANDEX_MUSIC_TOKEN,
+        BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATE,
         BLACKHOLE_YANDEX_MUSIC_MAX_ACTIVE_DOWNLOADS,
+
+        BLACKHOLE_TELEGRAM_BOT_ENABLED,
+        BLACKHOLE_TELEGRAM_BOT_TOKEN,
+        BLACKHOLE_TELEGRAM_BOT_ALLOWED_USERS,
+        BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API,
+        BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API_URL,
+        BLACKHOLE_TELEGRAM_BOT_ALTERNATE_STORAGE_URL,
+        BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATE,
+        BLACKHOLE_TELEGRAM_BOT_MAX_ACTIVE_DOWNLOADS,
     } = process.env
-
-    if (BLACKHOLE_YANDEX_MUSIC_TOKEN == undefined) {
-        throw new Error('BLACKHOLE_YANDEX_MUSIC_TOKEN environment variable not set')
-    }
-
-    if (
-        BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATETIME != undefined &&
-        isNaN((new Date(BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATETIME)).getTime())
-    ) {
-        throw new Error('Failed to parse datetime from BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATETIME environment variable')
-    }
 
     if (BLACKHOLE_SYNC_RULES != undefined) {
         try {
@@ -86,10 +112,55 @@ function validateConfig() {
         }
     }
 
+    // Yandex Music config
+
+    if (BLACKHOLE_YANDEX_MUSIC_TOKEN == undefined) {
+        throw new Error('BLACKHOLE_YANDEX_MUSIC_TOKEN environment variable not set')
+    }
+    if (
+        BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATE != undefined &&
+        isNaN((new Date(BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATE)).getTime())
+    ) {
+        throw new Error('Failed to parse datetime from BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATE environment variable')
+    }
     if (
         BLACKHOLE_YANDEX_MUSIC_MAX_ACTIVE_DOWNLOADS != undefined &&
         parseInt(BLACKHOLE_YANDEX_MUSIC_MAX_ACTIVE_DOWNLOADS) < 1
     ) {
         throw new Error('BLACKHOLE_YANDEX_MUSIC_MAX_ACTIVE_DOWNLOADS environment variable must be set as positive integer')
+    }
+
+    // Telegram bot config
+
+    const telegramBotEnabled = BLACKHOLE_TELEGRAM_BOT_ENABLED
+        ? BLACKHOLE_TELEGRAM_BOT_ENABLED.toLowerCase() === 'true'
+        : false
+    const hasTelegramBotToken = BLACKHOLE_TELEGRAM_BOT_TOKEN !== undefined && BLACKHOLE_TELEGRAM_BOT_TOKEN !== ''
+    const hasTelegramBotAllowedUsers = BLACKHOLE_TELEGRAM_BOT_ALLOWED_USERS !== undefined &&
+        BLACKHOLE_TELEGRAM_BOT_ALLOWED_USERS.split(',').length > 0
+
+    if (telegramBotEnabled && !hasTelegramBotToken) {
+        throw new Error('BLACKHOLE_TELEGRAM_BOT_TOKEN environment variable must be set to enable Telegram bot support')
+    }
+    if (telegramBotEnabled && !hasTelegramBotAllowedUsers) {
+        throw new Error('BLACKHOLE_TELEGRAM_BOT_ALLOWED_USERS environment variable must be set to enable Telegram bot support')
+    }
+    if (
+        (BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API !== undefined && BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API.toLowerCase() === 'true') &&
+        (BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API_URL === undefined || BLACKHOLE_TELEGRAM_BOT_ALTERNATE_STORAGE_URL === undefined)
+    ) {
+        throw new Error('BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API_URL and BLACKHOLE_TELEGRAM_BOT_ALTERNATE_STORAGE_URL environment variables must be set to use alternative Telegram bot API server')
+    }
+    if (
+        BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATE != undefined &&
+        isNaN((new Date(BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATE)).getTime())
+    ) {
+        throw new Error('Failed to parse datetime from BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATE environment variable')
+    }
+    if (
+        BLACKHOLE_TELEGRAM_BOT_MAX_ACTIVE_DOWNLOADS != undefined &&
+        parseInt(BLACKHOLE_TELEGRAM_BOT_MAX_ACTIVE_DOWNLOADS) < 1
+    ) {
+        throw new Error('BLACKHOLE_TELEGRAM_BOT_MAX_ACTIVE_DOWNLOADS environment variable must be set as positive integer')
     }
 }
