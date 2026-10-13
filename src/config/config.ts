@@ -89,7 +89,7 @@ function validateConfig() {
         BLACKHOLE_SYNC_RULES,
 
         BLACKHOLE_YANDEX_MUSIC_TOKEN,
-        BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATETIME,
+        BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATE,
         BLACKHOLE_YANDEX_MUSIC_MAX_ACTIVE_DOWNLOADS,
 
         BLACKHOLE_TELEGRAM_BOT_ENABLED,
@@ -98,7 +98,7 @@ function validateConfig() {
         BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API,
         BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API_URL,
         BLACKHOLE_TELEGRAM_BOT_ALTERNATE_STORAGE_URL,
-        BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATETIME,
+        BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATE,
         BLACKHOLE_TELEGRAM_BOT_MAX_ACTIVE_DOWNLOADS,
     } = process.env
 
@@ -118,10 +118,10 @@ function validateConfig() {
         throw new Error('BLACKHOLE_YANDEX_MUSIC_TOKEN environment variable not set')
     }
     if (
-        BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATETIME != undefined &&
-        isNaN((new Date(BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATETIME)).getTime())
+        BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATE != undefined &&
+        isNaN((new Date(BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATE)).getTime())
     ) {
-        throw new Error('Failed to parse datetime from BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATETIME environment variable')
+        throw new Error('Failed to parse datetime from BLACKHOLE_YANDEX_MUSIC_SYNC_FROM_DATE environment variable')
     }
     if (
         BLACKHOLE_YANDEX_MUSIC_MAX_ACTIVE_DOWNLOADS != undefined &&
@@ -152,10 +152,10 @@ function validateConfig() {
         throw new Error('BLACKHOLE_TELEGRAM_BOT_ALTERNATE_API_URL and BLACKHOLE_TELEGRAM_BOT_ALTERNATE_STORAGE_URL environment variables must be set to use alternative Telegram bot API server')
     }
     if (
-        BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATETIME != undefined &&
-        isNaN((new Date(BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATETIME)).getTime())
+        BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATE != undefined &&
+        isNaN((new Date(BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATE)).getTime())
     ) {
-        throw new Error('Failed to parse datetime from BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATETIME environment variable')
+        throw new Error('Failed to parse datetime from BLACKHOLE_TELEGRAM_BOT_SYNC_FROM_DATE environment variable')
     }
     if (
         BLACKHOLE_TELEGRAM_BOT_MAX_ACTIVE_DOWNLOADS != undefined &&

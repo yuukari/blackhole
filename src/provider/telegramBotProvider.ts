@@ -1,10 +1,13 @@
 import * as path from 'node:path'
-import { existsSync } from 'node:fs'
+import { existsSync, createWriteStream } from 'node:fs'
 import { mkdir, writeFile, rename, rm } from 'node:fs/promises'
+import { Readable } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web'
 
 import type { Bot } from 'grammy'
 import type { File } from 'grammy/types'
-import { applyTagsToFile, readTags, clearTags, applyPictures, type TagInput } from 'taglib-wasm/simple'
+import { readTags, clearTags, applyPictures, type TagInput, applyTags } from 'taglib-wasm/simple'
 import type { Logger } from 'pino'
 
 import type { Provider, ProviderAlbum, ProviderTrack } from './types.js'
@@ -61,16 +64,13 @@ export class TelegramBotProvider implements Provider {
         const syncFromDate = this.config.syncFromDate
 
         for (; ;) {
-            let tracks = this.telegramBotQueueRepository.getPendingTracks(chunkSize, 0)
+            let tracks = this.telegramBotQueueRepository.getPendingTracks(chunkSize, syncFromDate)
             if (tracks.length === 0) {
                 break
             }
-            if (syncFromDate != undefined) {
-                tracks = tracks.filter(track => new Date(track.added_at) >= syncFromDate)
-            }
 
             const ids = tracks.map(track => track.id)
-            this.telegramBotQueueRepository.setStatus('processed', tracks.map(track => track.id))
+            this.telegramBotQueueRepository.setStatus('processing', tracks.map(track => track.id))
             yield ids
         }
     }
@@ -123,6 +123,8 @@ export class TelegramBotProvider implements Provider {
             this.logger.error(taskResult.error, `Failed to download track`)
         }
 
+        this.telegramBotQueueRepository.setStatus('downloaded', downloadedIds)
+
         return downloadedIds
     }
 
@@ -145,8 +147,15 @@ export class TelegramBotProvider implements Provider {
         await mkdir(path.dirname(tempFilename), {recursive: true})
 
         // Download content to temporary file and normalize tags
-        await writeFile(tempFilename, Buffer.from(await response.arrayBuffer()))
         try {
+            if (response.body === null) {
+                throw new Error(`Empty response body for track with id '${id}'`)
+            }
+            await pipeline(
+                Readable.fromWeb(response.body as unknown as NodeReadableStream<Uint8Array>),
+                createWriteStream(tempFilename),
+            )
+
             await this.normalizeTags(track, tempFilename)
             const filename = await this.buildFilename(track, tempFilename)
             if (existsSync(filename)) {
@@ -233,10 +242,11 @@ export class TelegramBotProvider implements Provider {
         addTag('year', tags.year)
         addTag('genre', tags.genre?.join('; '))
 
-        await clearTags(filename)
-        await applyTagsToFile(filename, newTags)
+        let buffer = await clearTags(filename)
+        buffer = await applyTags(buffer, newTags)
         if (pictures) {
-            await applyPictures(filename, pictures)
+            buffer = await applyPictures(buffer, pictures)
         }
+        await writeFile(filename, buffer)
     }
 }

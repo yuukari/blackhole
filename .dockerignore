@@ -1,8 +1,8 @@
 .github/
 .idea/
 .vscode/
-addons/
 build/
+examples/
 node_modules/
 storage/
 .env

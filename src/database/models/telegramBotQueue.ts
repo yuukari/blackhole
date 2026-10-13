@@ -3,6 +3,6 @@ export type TelegramBotQueueModel = {
     file_name: string
     title: string | undefined
     artists: string | undefined
-    status: 'pending' | 'processed'
+    status: 'pending' | 'processing' | 'downloaded'
     added_at: number
 }

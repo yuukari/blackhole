@@ -212,7 +212,7 @@ other variables are optional.
 
 > ℹ️ By using official, cloud-side Telegram API blackhole can download files up to 20 MB. If you want to download large
 > files (for example, .flac's or .wav's), you need to deploy local instance of Telegram API
-> server. [This process described in this section](./addons/local-telegram-bot-api/README.md).
+> server. [This process described in this section](./examples/local-telegram-bot-api/README.md).
 
 | Variable                                     | Description                                                                                                                                                                                                                                                                             | Default value |
 |----------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|

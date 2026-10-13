@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3'
 
-import type { AlbumModel, TelegramBotQueueModel } from '../models/index.js'
+import type { TelegramBotQueueModel } from '../models/index.js'
 
 export class TelegramBotQueueRepository {
     private readonly db: Database
@@ -46,7 +46,36 @@ export class TelegramBotQueueRepository {
         return result?.count ?? 0
     }
 
-    public getPendingTracks(limit: number, offset: number): TelegramBotQueueModel[] {
+    public getPendingTracks(limit: number, fromDate: Date | undefined): TelegramBotQueueModel[] {
+        if (fromDate) {
+            const stmt = this.db.prepare<number[], TelegramBotQueueModel>(`
+                SELECT *
+                FROM
+                    blackhole_telegram_bot_queue
+                WHERE
+                    status = 'pending' AND
+                    added_at >= ?
+                ORDER BY
+                    added_at
+                LIMIT ?
+            `)
+            return stmt.all(fromDate.getTime(), limit)
+        }
+
+        const stmt = this.db.prepare<(number)[], TelegramBotQueueModel>(`
+            SELECT *
+            FROM
+                blackhole_telegram_bot_queue
+            WHERE
+                status = 'pending'
+            ORDER BY
+                added_at
+            LIMIT ?
+        `)
+        return stmt.all(limit)
+    }
+
+    public getPendingTracksForQueue(limit: number, offset: number): TelegramBotQueueModel[] {
         const stmt = this.db.prepare<(number)[], TelegramBotQueueModel>(`
             SELECT *
             FROM
@@ -60,7 +89,21 @@ export class TelegramBotQueueRepository {
         return stmt.all(limit, offset)
     }
 
+    public clearPendingTracks() {
+        const stmt = this.db.prepare<string[]>(`
+            DELETE
+            FROM
+                blackhole_telegram_bot_queue
+            WHERE
+                status = ?
+        `)
+        stmt.run('pending')
+    }
+
     public getTracksByIds(ids: string[]): TelegramBotQueueModel[] {
+        if (ids.length == 0) {
+            return []
+        }
         const stmt = this.db.prepare<string[], TelegramBotQueueModel>(`
             SELECT *
             FROM

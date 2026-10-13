@@ -15,6 +15,7 @@ import { DownloadAlbumsTask, DownloadTracksTask, type Task, UpdateAlbumsTask, Up
 import { TelegramBot } from './bot/index.js'
 
 let logger: Logger
+let isOneTimeSync = process.argv.length > 1 && process.argv[2] == '--once'
 let isSyncRunning = false
 let isExiting = false
 
@@ -32,7 +33,7 @@ async function boot() {
     const telegramBotQueueRepository = new TelegramBotQueueRepository(db)
 
     const bot = new TelegramBot(config.telegramBot, telegramBotQueueRepository, logger)
-    const botInstance = await bot.start()
+    const botInstance = bot.getInstance()
 
     const providers: Provider[] = [
         new YandexMusicProvider(config.yandexMusic, config.mediaPath, logger),
@@ -40,7 +41,7 @@ async function boot() {
     if (config.telegramBot.enabled) {
         providers.push(new TelegramBotProvider(
             config.telegramBot, config.mediaPath,
-            botInstance!, telegramBotQueueRepository,
+            botInstance, telegramBotQueueRepository,
             logger,
         ))
     }
@@ -55,12 +56,14 @@ async function boot() {
         new DownloadAlbumsTask(providers, albumsRepository, logger, config.syncRules, config.processChunkSize),
     ]
 
-    if (process.argv.length > 1 && process.argv[2] == '--once') {
+    if (isOneTimeSync) {
         logger.info('Running one time sync')
         await runTasks(tasks)
         db.close()
         return
     }
+
+    await bot.start()
 
     logger.info('blackhole ready')
 

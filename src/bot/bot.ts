@@ -7,7 +7,7 @@ import type { TelegramBotConfig } from '../config/types.js'
 
 import { AllowListMiddleware } from './middleware/index.js'
 import { DEFAULT_LOCALE, i18n } from './i18n.js'
-import { AddToQueueHandler, FallbackHandler, StartHandler, QueueHandler } from './handler/index.js'
+import { AddToQueueHandler, FallbackHandler, StartHandler, QueueHandler, ClearQueueHandler } from './handler/index.js'
 
 import { TelegramBotQueueRepository } from '../database/repository/index.js'
 
@@ -25,9 +25,6 @@ export class TelegramBot {
     ) {
         this.config = config
         this.logger = logger.child({}, {msgPrefix: 'TelegramBot - '})
-        if (!this.config.enabled) {
-            return
-        }
 
         const botOptions = this.config.alternateApi
             ? {
@@ -44,12 +41,18 @@ export class TelegramBot {
                 return
             }
 
-            await this.bot!.api.sendMessage(
+            await e.ctx.api.sendMessage(
                 e.ctx.chatId,
                 e.ctx.t('error', {error: String(e.error)}),
                 {parse_mode: 'HTML'},
             )
         })
+
+        // If telegram bot not enabled in config - don't attach any middlewares, handlers, etc., leaving it only for
+        // API calls from Telegram bot provider
+        if (!this.config.enabled) {
+            return
+        }
 
         this.bot.use(i18n)
         this.bot.use(new AllowListMiddleware(this.config.allowedUsers).do)
@@ -57,11 +60,12 @@ export class TelegramBot {
         new StartHandler().register(this.bot)
         new AddToQueueHandler(this.config.alternateApi, telegramBotQueueRepository, this.logger).register(this.bot)
         new QueueHandler(telegramBotQueueRepository).register(this.bot)
+        new ClearQueueHandler(telegramBotQueueRepository).register(this.bot)
         new FallbackHandler().register(this.bot)
     }
 
     public async start(): Promise<Bot<TelegramBotContext> | undefined> {
-        if (this.bot === undefined) {
+        if (!this.bot) {
             return
         }
 
@@ -80,10 +84,17 @@ export class TelegramBot {
     }
 
     public async stop(): Promise<void> {
-        if (this.bot === undefined) {
+        if (!this.bot) {
             return
         }
         await this.bot.stop()
+    }
+
+    public getInstance(): Bot<TelegramBotContext> {
+        if (!this.bot) {
+            throw new Error('Bot instance not created')
+        }
+        return this.bot
     }
 
     private buildCommands(locale: string): { command: string, description: string }[] {

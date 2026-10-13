@@ -67,7 +67,7 @@ export default class QueueHandler {
         const offset = (page - 1) * this.pageSize
         const totalPages = Math.ceil(queueCount / this.pageSize)
 
-        const queue = this.telegramBotQueueRepository.getPendingTracks(this.pageSize, offset)
+        const queue = this.telegramBotQueueRepository.getPendingTracksForQueue(this.pageSize, offset)
             .map((track, i) => {
                 const number = ++i + offset
                 if (track.title && track.artists) {
@@ -83,6 +83,7 @@ export default class QueueHandler {
         if (page < totalPages) {
             keyboard.text('➡️', `queue:page:${page + 1}`)
         }
+        keyboard.row().text(ctx.t('btn-queue-clear'), 'queue:clear')
 
         return {
             text: ctx.t('queue-list', { items: queue.join('\n'), page, totalPages }),

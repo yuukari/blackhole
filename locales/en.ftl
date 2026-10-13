@@ -32,6 +32,10 @@ queue-list = <b>⬇️ Download queue</b>
 
     Page: <b>{ $page } of { $totalPages }</b>
 
+queue-cleared = 🗑  Download queue was <b>cleared</b>.
+
+btn-queue-clear = 🗑  Clear
+
 fallback = 🤔 I don't understand you.
 
     Use /help to see the list of available commands and features.

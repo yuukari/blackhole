@@ -58,7 +58,7 @@ export default class AddToQueueHandler {
             throw new Error('No document attachment in this message')
         }
 
-        if (document.file_size !== undefined && document.file_size > this.maxCloudFileSize) {
+        if (!this.useAlternateApi && document.file_size !== undefined && document.file_size > this.maxCloudFileSize) {
             await ctx.reply(
                 ctx.t('addToQueue-docTooLarge', {file_name: document.file_name!}),
                 {parse_mode: 'HTML'},
